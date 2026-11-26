@@ -1,5 +1,6 @@
 ﻿using Core.Entities;
 using Core.Interfaces;
+using Core.Specification;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,21 +10,25 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController(IProductRepository productRepository) : ControllerBase
+    public class ProductsController(IGenericRepository<Product> repo) : ControllerBase
     {
         
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts(string? brand, string? type, string? sort)
         {
+
+            var spec = new ProductSpecification(brand, type, sort);
+
+            var products = await repo.ListAsync(spec);
             // Implementation for fetching products
-            return Ok(await productRepository.GetProductsAsync(brand, type, sort));
+            return Ok(products);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            var product = await productRepository.GetProductByIdAsync(id);
+            var product = await repo.GetByIDAsync(id);
             if (product == null)
             {
                 return NotFound();
@@ -34,8 +39,8 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(Product product)
         {
-                productRepository.AddProduct(product);
-                await productRepository.SaveChangesAsync();
+                repo.Add(product);
+                await repo.SaveAllAsync();
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
 
@@ -47,11 +52,11 @@ namespace API.Controllers
                 return BadRequest();
             }
 
-            productRepository.UpdateProduct(product);
+            repo.Update(product);
 
             try
             {
-                await productRepository.SaveChangesAsync();
+                await repo.SaveAllAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -71,32 +76,34 @@ namespace API.Controllers
         [HttpDelete("{id:int}")]    
         public async Task<ActionResult<Product>> DeleteProduct(int id)
         {
-            var product = await productRepository.GetProductByIdAsync(id);
+            var product = await repo.GetByIDAsync(id);
             if (product == null)
             {
                 return NotFound();
             }
 
-            productRepository.DeleteProduct(product);
-            await productRepository.SaveChangesAsync();
+            repo.Remove(product);
+            await repo.SaveAllAsync();
 
             return product;
         }
         [HttpGet("brands")]
         public async Task<ActionResult<IReadOnlyList<string>>> GetBrands()
         {
-            return Ok(await productRepository.GetBrandAsync());
+            // Implementation for fetching brands doing in future
+            return Ok();
         }
 
         [HttpGet("types")]
         public async Task<ActionResult<IReadOnlyList<string>>> GetTypes()
         {
-            return Ok(await productRepository.GetTypesAsync());
+            // Implementation for fetching types doing in future
+            return Ok();
         }
 
         private bool ProductExists(int id)
         {
-            return productRepository.ProductExists(id);
+            return repo.Exists(id);
         }
     }
 }

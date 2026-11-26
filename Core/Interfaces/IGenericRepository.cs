@@ -1,0 +1,20 @@
+﻿using Core.Entities;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Core.Interfaces
+{
+    public interface IGenericRepository<T> where T : BaseEntity
+    {
+        Task<T?> GetByIDAsync(int id);
+        Task<IReadOnlyList<T>> ListAllAsync();
+        Task<T?> GetEntityWithSpec(ISpecification<T> spec);
+        Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec);
+        void Add(T entity);
+        void Update(T entity);
+        void Remove(T entity);
+        Task<bool> SaveAllAsync();
+        bool Exists(int id);
+    }
+}
